@@ -590,15 +590,24 @@
 	<cfset var sSet = StructNew()>
 	<cfset var sWhere = StructNew()>
 	
-	<cfset sSet["ParentSectionID"] = 0>
-	<cfset sWhere["ParentSectionID"] = "">
 	
-	<cfset variables.DataMgr.updateRecords(tablename=This.Sections.getTableVariable(),data_set=sSet,data_where=sWhere)>
+	<cfif This.Sections.hasSections(ParentSectionID="")>
+		<cfset sSet["ParentSectionID"] = 0>
+		<cfset sWhere["ParentSectionID"] = "">
+		
+		<cfset variables.DataMgr.updateRecords(tablename=This.Sections.getTableVariable(),data_set=sSet,data_where=sWhere)>
+	</cfif>
 	
 </cffunction>
 
 <cffunction name="xml" access="public" output="yes">
 <tables prefix="#variables.prefix#">
+	<table entity="Content Block" universal="true">
+		<field name="ValueMemo" type="memo" />
+		<field name="ValueNumeric" type="numeric" />
+		<field name="ValueText" type="text" Length="250" />
+		<field name="ValueYesNo" type="boolean" />
+	</table>
 	<table entity="Page" labelField="Title" folder="pages">
 		<field fentity="Section" />
 		<field fentity="Template" onRemoteDelete="Error" />
