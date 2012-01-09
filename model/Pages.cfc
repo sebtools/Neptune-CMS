@@ -381,7 +381,7 @@
 	</cfif>
 	
 	<!--- Write page file --->
-	<cfif Len(arguments.skeleton)>
+	<cfif Len(arguments.skeleton) AND ReFindNoCase("\[.*\]",arguments.skeleton)>
 		<cfset variables.CMS.writeFile(sPage["PageID"],arguments.skeleton,true)>
 	</cfif>
 	

@@ -23,10 +23,10 @@
 				<argument name="Manager" />
 				<argument name="RootPath" />
 				<argument name="createDefaultSection" value="false" />
-				<argument name="skeleton" ifmissing="skiparg" />
+				<argument name="Settings" />
 			</component>
 			<component name="SitePages" path="[path_component]model.SitePages">
-				<argument name="DataMgr" />
+				<argument name="Manager" />
 				<argument name="CMS" />
 			</component>
 			<component name="CMS_Searcher" path="[path_component]model.Searcher">

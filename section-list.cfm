@@ -1,6 +1,6 @@
 <cf_PageController>
 
-<cf_Template title="Sections">
+<cf_Template title="Sections" showTitle="false">
 
 <cfif qSection.RecordCount>
 <p><a href="section-list.cfm">Return to Top</a></p>

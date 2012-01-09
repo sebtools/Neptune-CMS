@@ -28,16 +28,24 @@
 		<cf_sebField type="hidden" name="Contents" setValue="#HTMLEditFormat(qPage.Contents)#">
 		<input type="button" name="btnPreview" id="btnPreview" value="Preview" />
 	<cfelse>
-		<cf_sebField type="CKeditor" name="Contents">
+		<cf_sebField name="Contents" height="350">
 		<cfif isQuery(qSiteSettings) AND qSiteSettings.RecordCount>
 			Insert Setting Data:
-			<select name="ContentFileID" onchange="addSettingMarker(this.options[this.selectedIndex].value);">
+			<select name="SiteSettingID" onchange="addSettingMarker(this.options[this.selectedIndex].value);">
 				<option value=""></option><cfoutput query="qSiteSettings">
 				<option value="#SettingName#">#Settinglabel#</option></cfoutput>
 			</select><br/>
 		</cfif>
+		<cfif isQuery(qSettings) AND qSettings.RecordCount>
+			<cf_sebField type="custom1" label="Insert Setting Data">
+			<select name="SettingID" onchange="addSettingMarker(this.options[this.selectedIndex].value);">
+				<option value=""></option><cfoutput query="qSettings">
+				<option value="#SettingName#">#Settinglabel#</option></cfoutput>
+			</select>
+			</cf_sebField>
+		</cfif>
 		<cfif isQuery(qContentFiles) AND qContentFiles.RecordCount>
-			Insert Content Block:
+			Insert Content File Block:
 			<select name="ContentFileID" onchange="addContentFileMarker(this.options[this.selectedIndex].value);">
 				<option value=""></option><cfoutput query="qContentFiles">
 				<option value="#Label#">#Label#</option></cfoutput>

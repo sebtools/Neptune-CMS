@@ -10,6 +10,13 @@
 	<cfargument name="skeleton" type="string" default="">
 	<cfargument name="OnlyOverwriteCMS" type="boolean" default="true">
 	<cfargument name="Searcher" type="any" required="false">
+	<cfargument name="Settings" type="any" required="false">
+	
+	<cfif NOT Len(Arguments.skeleton)>
+		<cfset Arguments.skeleton = '
+<!-- nosearchy -->
+<cfinclude template="/admin/cms/_config/_template.cfm">'>
+	</cfif>
 	
 	<cfset initInternal(argumentCollection=arguments)>
 	
@@ -65,7 +72,11 @@
 			<cfset output = ReplaceNoCase(output, "{#Label#}", ContentFileCode, "ALL")>
 		</cfif>
 	</cfloop>
-
+	
+	<cfif StructKeyExists(Variables,"Settings") AND StructKeyExists(Variables.Settings,"populate")>
+		<cfset output = Variables.Settings.populate(output)>
+	</cfif>
+	
 	<cfreturn output>
 </cffunction>
 
@@ -602,12 +613,6 @@
 
 <cffunction name="xml" access="public" output="yes">
 <tables prefix="#variables.prefix#">
-	<table entity="Content Block" universal="true">
-		<field name="ValueMemo" type="memo" />
-		<field name="ValueNumeric" type="numeric" />
-		<field name="ValueText" type="text" Length="250" />
-		<field name="ValueYesNo" type="boolean" />
-	</table>
 	<table entity="Page" labelField="Title" folder="pages">
 		<field fentity="Section" />
 		<field fentity="Template" onRemoteDelete="Error" />
@@ -620,7 +625,7 @@
 		<field name="WhenCreated" Label="When Created" type="date" />
 		<field name="Description" Label="Description" type="text" Length="240" />
 		<field name="Keywords" Label="Keywords" type="text" Length="240" useInMultiRecordsets="false" />
-		<field name="Contents" Label="Contents" type="memo" useInMultiRecordsets="false" />
+		<field name="Contents" Label="Contents" type="html" useInMultiRecordsets="false" />
 		<field name="Contents2" Label="Contents2" type="memo" useInMultiRecordsets="false" />
 		<field name="isPageLive" Label="Live?" type="boolean" default="1" />
 		<field name="IncludeFile" Label="Include File" type="text" Length="240" useInMultiRecordsets="false" />

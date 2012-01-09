@@ -1,23 +1,17 @@
-<cfcomponent displayname="Site Pages">
+<cfcomponent extends="com.sebtools.Records" displayname="Site Pages">
 
 <cffunction name="init" access="public" returntype="any" output="no">
-	<cfargument name="DataMgr" type="any" required="yes">
+	<cfargument name="Manager" type="any" required="yes">
 	<cfargument name="CMS" type="any" required="no">
 
-	<cfset variables.DataMgr = arguments.DataMgr>
-
-	<cfset variables.datasource = variables.DataMgr.getDatasource()>
-	<cfset variables.DataMgr.loadXml(getDbXml(),true,true)>
+	<cfset initInternal(ArgumentCollection=Arguments)>
 
 	<cfset variables.Components = StructNew()>
 
-	<cfset variables.table = "sitePages">
-
-	<cfif StructKeyExists(arguments,"CMS")>
-		<cfset variables.CMS = arguments.CMS>
+	<cfif StructKeyExists(Arguments,"CMS")>
 		<cfinvoke method="setComponent">
 			<cfinvokeargument name="Name" value="CMS">
-			<cfinvokeargument name="Component" value="#arguments.CMS#">
+			<cfinvokeargument name="Component" value="#Arguments.CMS#">
 			<cfinvokeargument name="MethodName" value="getLivePages">
 			<cfinvokeargument name="LinkURL" value="UrlPath">
 			<cfinvokeargument name="Title" value="Title">
@@ -27,7 +21,7 @@
 
 	<cfset removeMissingPages()>
 
-	<cfreturn this>
+	<cfreturn This>
 </cffunction>
 
 <cffunction name="addPage" access="public" returntype="numeric" output="no">
@@ -38,19 +32,19 @@
 	<cfset var sPage = StructNew()>
 
 	<!--- Insert a page record for this URL --->
-	<cfset sPage["ScriptName"] = arguments.ScriptName>
-	<cfset sPage["PageID"] = variables.DataMgr.insertRecord(variables.table,arguments,"skip")>
+	<cfset sPage["ScriptName"] = Arguments.ScriptName>
+	<cfset sPage["PageID"] = Variables.DataMgr.insertRecord(variables.table,arguments,"skip")>
 
 	<!--- Update page title and (optionally) section --->
-	<cfset sPage["Title"] = arguments.Title>
+	<cfset sPage["Title"] = Arguments.Title>
 
 	<!--- Set section if it is passed in --->
-	<cfif StructKeyExists(arguments,"Section")>
+	<cfif StructKeyExists(Arguments,"Section")>
 		<!--- Use numeric section or get section from section name --->
-		<cfif isNumeric(arguments.Section)>
-			<cfset sPage["SectionID"] = arguments.Section>
+		<cfif isNumeric(Arguments.Section)>
+			<cfset sPage["SectionID"] = Arguments.Section>
 		<cfelseif StructKeyExists(variables,"CMS")>
-			<cfset sPage["SectionID"] = variables.CMS.Sections.getSectionID(SectionTitle=arguments.Section,isSectionLive=1)>
+			<cfset sPage["SectionID"] = Variables.CMS.Sections.getSectionID(SectionTitle=Arguments.Section,isSectionLive=1)>
 		</cfif>
 		<cfif StructKeyExists(sPage,"SectionID") AND NOT( isNumeric(sPage["SectionID"]) AND sPage["SectionID"] )>
 			<cfset StructDelete(sPage,"SectionID")>
@@ -69,22 +63,22 @@
 </cffunction>
 
 <cffunction name="getPage" access="public" returntype="query" output="no">
-	<cfargument name="PageID" type="numeric">
+	<cfargument name="PageID" type="numeric" required="yes">
 
-	<cfreturn variables.DataMgr.getRecord(variables.table,arguments)>
+	<cfreturn getRecord(ArgumentCollection=Arguments)>
 </cffunction>
 
 <cffunction name="getPages" access="public" returntype="query" output="no">
 
 	<cfset var qPages = 0>
-	<cfset var qSitePages = variables.DataMgr.getRecords(variables.table,arguments)>
+	<cfset var qSitePages = getRecords(ArgumentCollection=Arguments)>
 	<cfset var sPageQueries = StructNew()>
 	<cfset var CompName = "">
 
 	<cfloop collection="#variables.Components#" item="CompName">
 		<cfinvoke returnvariable="sPageQueries.#CompName#" method="getRemotePages">
 			<cfinvokeargument name="CompName" value="#CompName#">
-			<cfinvokeargument name="args" value="#arguments#">
+			<cfinvokeargument name="args" value="#Arguments#">
 		</cfinvoke>
 	</cfloop>
 
@@ -185,13 +179,11 @@
 
 <cffunction name="removeMissingPages" access="public" returntype="void" output="false" hint="">
 
-	<cfset var qPages = variables.DataMgr.getRecords(variables.table)>
-	<cfset var sPage = StructNew()>
+	<cfset var qPages = getRecords(fieldlist="PageID,ScriptName")>
 
 	<cfloop query="qPages">
 		<cfif Left(ScriptName,1) EQ "/" AND NOT FileExists(ExpandPath(ScriptName))>
-			<cfset sPage["PageID"] = PageID>
-			<cfset variables.DataMgr.deleteRecord(variables.table,sPage)>
+			<cfset removePage(PageID)>
 		</cfif>
 	</cfloop>
 
@@ -202,7 +194,7 @@
 	<cfargument name="Title" type="string" required="no">
 	<cfargument name="ScriptName" type="string" required="no">
 
-	<cfreturn variables.DataMgr.saveRecord(variables.table,arguments)>
+	<cfreturn saveRecord(ArgumentCollection=Arguments)>
 </cffunction>
 
 <cffunction name="setComponent" access="public" returntype="void" output="no">
@@ -216,27 +208,19 @@
 
 </cffunction>
 
-<cffunction name="getDbXml" access="public" returntype="string" output="no" hint="I return the XML for the tables needed for Searcher to work.">
-
-	<cfset var tableXML = "">
-
-	<cfsavecontent variable="tableXML">
-	<tables>
-		<table name="sitePages">
-			<field ColumnName="PageID" CF_DataType="CF_SQL_INTEGER" PrimaryKey="true" Increment="true" />
-			<field ColumnName="SectionID" CF_DataType="CF_SQL_INTEGER" Default="0" />
-			<field ColumnName="Title" CF_DataType="CF_SQL_VARCHAR" Length="50" />
-			<field ColumnName="ScriptName" CF_DataType="CF_SQL_VARCHAR" Length="150" />
-			<field ColumnName="DateEntered" CF_DataType="CF_SQL_DATE" Special="CreationDate" />
-			<field ColumnName="DateUpdated" CF_DataType="CF_SQL_DATE" Special="LastUpdatedDate" />
-		</table>
-		<!--- <data table="sitePages">
-			<row Title="Home" ScriptName="/" />
-		</data> --->
-	</tables>
-	</cfsavecontent>
-
-	<cfreturn tableXML>
+<cffunction name="xml" access="public" output="yes">
+<tables prefix="site">
+	<table entity="Page">
+		<field name="SectionID" type="integer" />
+		<field name="Title" type="text" Length="50" />
+		<field name="ScriptName" type="text" Length="150" />
+		<field name="DateEntered" type="date" Special="CreationDate" />
+		<field name="DateUpdated" type="date" Special="LastUpdatedDate" />
+	</table>
+	<!--- <data table="sitePages">
+		<row Title="Home" ScriptName="/" />
+	</data> --->
+</tables>
 </cffunction>
 
 </cfcomponent>

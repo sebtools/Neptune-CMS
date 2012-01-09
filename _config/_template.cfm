@@ -8,23 +8,16 @@
 	</cftry>
 </cfif>
 
-<cf_layout title="#qPage.Title#"><cfif Len(qPage.Description)>
-	<cfoutput><meta name="Description" content="#qPage.Description#" /></cfoutput></cfif><cfif Len(qPage.Keywords)>
-	<cfoutput><meta name="Keywords" content="#qPage.Keywords#" /></cfoutput></cfif>
-<cf_layout>
+<cf_Template title="#qPage.Title#" meta_description="#qPage.Description#" meta_keywords="#qPage.Keywords#" showTitle="false">
 
 <cfoutput query="qPage">
 
-<cfif Len(ImageFileName)>
-	<div><img src="/f/page-images/#ImageFileName#" alt="" /></div>
-</cfif>
-
 <h1>#Trim(HTMLEditFormat(Title))#</h1>
 
-<cfif StructKeyExists(Application,"SiteSettings")>#Trim(Application.SiteSettings.populate(Application.CMS.adjustContent(Contents)))#<cfelse>#Contents#</cfif>
+<cfif StructKeyExists(Application,"SiteSettings")>#Trim(Application.SiteSettings.populate(Application.CMS.adjustContent(Contents)))#<cfelse>#Application.CMS.adjustContent(Contents)#</cfif>
 
 <!--- #editLink("/admin/content/pages/page-edit.cfm?id=#PageID#")# --->
 <cfif Len(IncludeFile)><cfinclude template="#IncludeFile#"></cfif>
 </cfoutput>
 
-<cf_layout>
+</cf_Template>

@@ -2,7 +2,7 @@
 
 <cfset loadExternalVars("CMS,Framework")>
 <cfset loadExternalVars("Pages,Images,Templates","CMS")>
-<cfset loadExternalVars(varlist="SiteSettings,WysiFilter",skipmissing=true)>
+<cfset loadExternalVars(varlist="SiteSettings,WysiFilter,SessionMgr,Settings,ContentBlocks",skipmissing=true)>
 <cfset setInherits(variables.CMS)>
 
 <cffunction name="loadData" access="public" returntype="struct" output="no">
@@ -29,6 +29,7 @@
 	<cfset vars["qTemplate"] = 0>
 	<cfset vars["qImages"] = 0>
 	<cfset vars["qSiteSettings"] = 0>
+	<cfset vars["qSettings"] = 0>
 	<cfset vars["qContentFiles"] = variables.CMS.getContentFiles()>
 	<cfset vars["ContentEdit"] = "">
 	<cfset vars["isImageAddable"] = false>
@@ -36,8 +37,17 @@
 	<cfset vars["hasTemplates"] = false>
 	<cfset vars["aFormFilters"] = ArrayNew(1)>
 	<cfset vars["qSections"] = variables.CMS.Sections.getSections()>
+	<cfset vars.author = "">
 	<cfset vars.forward = "page-list.cfm">
 	<cfset vars.isLinkManager = variables.Framework.Config.getSetting("isMenuManaged")>
+	
+	<cfif StructKeyExists(Variables,"SessionMgr")>
+		<cfif Variables.SessionMgr.exists("FullName")>
+			<cfset vars.author = Variables.SessionMgr.getValue("FullName")>
+		<cfelseif Variables.SessionMgr.exists("FirstName") AND Variables.SessionMgr.exists("LastName")>
+			<cfset vars.author = Variables.SessionMgr.getValue("FirstName") & " " & Variables.SessionMgr.getValue("LastName")>
+		</cfif>
+	</cfif>
 	
 	<cfif URL.from EQ "section" AND URL.section>
 		<cfset vars.forward = "section-edit.cfm?id=#URL.section#">
@@ -50,6 +60,11 @@
 	<!--- Load Site Settings if that component is running --->
 	<cfif StructKeyExists(variables,"SiteSettings")>
 		<cfset vars.qSiteSettings = variables.SiteSettings.getSettingRecords()>
+	</cfif>
+	
+	<!--- Load Settings if that component is running (newer than "Site Settings") --->
+	<cfif StructKeyExists(variables,"Settings")>
+		<cfset vars.qSettings = variables.Settings.getSettings(fieldlist="SettingID,SettingName,SettingLabel")>
 	</cfif>
 	
 	<!--- Load Site Settings if that component is running --->
