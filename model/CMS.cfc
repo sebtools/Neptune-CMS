@@ -13,8 +13,7 @@
 	<cfargument name="Settings" type="any" required="false">
 	
 	<cfif NOT Len(Arguments.skeleton)>
-		<cfset Arguments.skeleton = '
-<!-- nosearchy -->
+		<cfset Arguments.skeleton = '<!-- nosearchy --><cfset qPage = Application.CMS.getPage([PageID])>
 <cfinclude template="/admin/cms/_config/_template.cfm">'>
 	</cfif>
 	

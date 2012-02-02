@@ -233,7 +233,7 @@
 	<cfargument name="ImageFileName" type="string" hint="A file name for an image being used on this page.">
 	<cfargument name="VersionDescription" type="string" hint="Any comments on the changes being made.">
 	<cfargument name="VersionBy" type="string" hint="The person making the change.">
-	<cfargument name="skeleton" type="string" required="false">
+	<cfargument name="skeleton" type="string" default="#variables.CMS.getSkeleton()#">
 	
 	<cfscript>
 	var liVersionItems = "PageID,SiteVersionID,Title,Description,Keywords,Contents,Contents2,VersionDescription,VersionBy";
@@ -290,7 +290,17 @@
 	</cfscript>
 	
 	<!--- No longer allow "index.cfm" or "default.cfm", so that can be used by section --->
-	<cfif StructKeyExists(arguments,"FileName") AND ( ListFirst(arguments.FileName,".") EQ "index" OR ListFirst(arguments.FileName,".") EQ "default" )>
+	<cfif
+		StructKeyExists(arguments,"FileName")
+		AND (
+					ListFirst(arguments.FileName,".") EQ "index"
+				OR	ListFirst(arguments.FileName,".") EQ "default"
+			)
+		AND	(
+					StructKeyExists(arguments,"SectionID")
+				AND	Variables.CMS.Sections.isIndexSectionCode(arguments.SectionID,true)
+			)
+	>
 		<cfset arguments.FileName = "my#arguments.FileName#">
 	</cfif>
 
@@ -385,9 +395,9 @@
 		<cfset variables.CMS.writeFile(sPage["PageID"],arguments.skeleton,true)>
 	</cfif>
 	
-	<cfif StructKeyExists(arguments,"SectionID") AND arguments.SectionID GT 0>
+	<!---<cfif StructKeyExists(arguments,"SectionID") AND arguments.SectionID GT 0>
 		<cfset variables.CMS.Sections.setPathData(arguments.SectionID)>
-	</cfif>
+	</cfif>--->
 	
 	<!--- Add to menu if indicated for new page --->
 	<cfscript>

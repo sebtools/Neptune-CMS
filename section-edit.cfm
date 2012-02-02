@@ -1,6 +1,6 @@
 <cf_PageController>
 
-<cf_Template showTitle="true">
+<cf_Template>
 
 <cf_sebForm
 	forward="section-list.cfm"

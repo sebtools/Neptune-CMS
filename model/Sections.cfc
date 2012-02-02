@@ -6,12 +6,14 @@
 	<cfset var qParentSection = 0>
 	<cfset var qSection = getRecord(argumentCollection=arguments)>
 	
-	<cfif qSection.RecordCount>
-		<cfif Len(qSection.ParentSectionID) AND qSection.ParentSectionID GT 0>
-			<cfset qParentSection = getSection(qSection.ParentSectionID)>
-			<cfset QuerySetCell(qSection, "SectionLabelExt", "#qParentSection.SectionLabelExt# --&gt; #qSection.SectionTitle#")>
-		<cfelse>
-			<cfset QuerySetCell(qSection, "SectionLabelExt", "#qSection.SectionTitle#")>
+	<cfif ListFindNoCase(qSection.ColumnList,"SectionLabelExt")>
+		<cfif qSection.RecordCount>
+			<cfif Len(qSection.ParentSectionID) AND qSection.ParentSectionID GT 0>
+				<cfset qParentSection = getSection(qSection.ParentSectionID)>
+				<cfset QuerySetCell(qSection, "SectionLabelExt", "#qParentSection.SectionLabelExt# --&gt; #qSection.SectionTitle#")>
+			<cfelse>
+				<cfset QuerySetCell(qSection, "SectionLabelExt", "#qSection.SectionTitle#")>
+			</cfif>
 		</cfif>
 	</cfif>
 	
@@ -48,10 +50,26 @@
 	<cfargument name="SectionTitle" type="string" required="no">
 	
 	<cfset var SectionID = 0>
-	<cfset var qSection = variables.Manager.getRecords(tablename=variables.table,data=arguments,fieldlist="SectionID")>
+	<cfset var qSection = 0>
+	
+	<cfif StructKeyExists(Arguments,"path")>
+		<cfset qSection = Variables.CMS.Links.getLinks(LinkURL=Arguments.path,distinct=true,fieldlist="SectionID")>
+		<cfif qSection.RecordCount EQ 1 AND Val(qSection.SectionID)>
+			<cfreturn qSection.SectionID>
+		</cfif>
+		
+		<cfset qSection = getSections(fieldlist="SectionID",MainPageURL=Arguments.path)>
+		<cfif qSection.RecordCount EQ 1 AND Val(qSection.SectionID)>
+			<cfreturn qSection.SectionID>
+		</cfif>
+		
+		<cfset Arguments.SectionDir = Arguments.path>
+	</cfif>
+	
+	<cfset qSection = variables.Manager.getRecords(tablename=variables.table,data=arguments,fieldlist="SectionID")>
 	
 	<cfif qSection.RecordCount EQ 1>
-		<cfset SectionID = qSection.SectionID>
+		<cfset SectionID = Val(qSection.SectionID)>
 	</cfif>
 	
 	<cfreturn SectionID>
@@ -83,16 +101,27 @@
 	<cfset var qParentSection = 0>
 	<cfset var qSections = 0>
 	
-	<cfset qSections = variables.DataMgr.getRecords(tablename=variables.table,data=arguments,orderby="OrderNum,SectionTitle")>
+	<cfif NOT StructKeyExists(Arguments,"OrderBy")>
+		<cfset Arguments.OrderBy = "OrderNum,SectionTitle">
+	</cfif>
 	
-	<cfloop query="qSections">
-		<cfif Len(ParentSectionID) AND isNumeric(ParentSectionID) AND ParentSectionID GT 0>
-			<cfset qParentSection = getSection(ParentSectionID)>
-			<cfset QuerySetCell(qSections, "SectionLabelExt", "#qParentSection.SectionLabelExt# --&gt; #SectionTitle#",CurrentRow)>
-		<cfelse>
-			<cfset QuerySetCell(qSections, "SectionLabelExt", "#SectionTitle#",CurrentRow)>
-		</cfif>
-	</cfloop>
+	<cfif StructKeyExists(Arguments,"SectionDir") AND Len(Arguments.SectionDir)>
+		<cfset Arguments.SectionDir = getDirectoryFromPath(Arguments.SectionDir)>
+		<cfset Arguments.SectionDir = Variables.CMS.Manager.FileMgr.convertFolder(Arguments.SectionDir)>
+	</cfif>
+	
+	<cfset qSections = getRecords(ArgumentCollection=Arguments)>
+	
+	<cfif ListFindNoCase(qSections.ColumnList,"SectionLabelExt") AND ListFindNoCase(qSections.ColumnList,"SectionTitle")>
+		<cfloop query="qSections">
+			<cfif Len(ParentSectionID) AND isNumeric(ParentSectionID) AND ParentSectionID GT 0>
+				<cfset qParentSection = getSection(SectionID=ParentSectionID,fieldlist="SectionTitle,SectionLabelExt")>
+				<cfset QuerySetCell(qSections, "SectionLabelExt", "#qParentSection.SectionLabelExt# --&gt; #SectionTitle#",CurrentRow)>
+			<cfelse>
+				<cfset QuerySetCell(qSections, "SectionLabelExt", "#SectionTitle#",CurrentRow)>
+			</cfif>
+		</cfloop>
+	</cfif>
 	
 	<cfreturn qSections>
 </cffunction>
@@ -152,14 +181,39 @@
 	
 	<cfscript>
 	var qSection = 0;
-	var qGetSection = 0;
 	var result = 0;
+	</cfscript>
 	
-	if ( StructKeyExists(arguments,"SectionID") AND NOT Val(arguments.SectionID) ) {
-		StructDelete(arguments,"SectionID");
+	<!--- Save section --->
+	<cfset result = saveRecord(ArgumentCollection=Arguments)>
+	
+	<cfset setPathData(result)>
+	
+	<cfset variables.CMS.indexSearch()>
+	
+	<cfreturn result>
+</cffunction>
+
+<cffunction name="validateSection" access="public" returntype="struct" output="false" hint="">
+	
+	<cfscript>
+	Arguments = validateSectionID(ArgumentCollection=Arguments);
+	Arguments = validateSectionLink(ArgumentCollection=Arguments);
+	</cfscript>
+	
+	<cfreturn Arguments>
+</cffunction>
+
+<cffunction name="validateSectionID" access="private" returntype="struct" output="false" hint="">
+	
+	<cfscript>
+	var qGetSection = 0;
+	
+	if ( StructKeyExists(Arguments,"SectionID") AND NOT Val(Arguments.SectionID) ) {
+		StructDelete(Arguments,"SectionID");
 	}
-	if ( StructKeyExists(arguments,"ParentSectionID") AND NOT Val(arguments.ParentSectionID) ) {
-		StructDelete(arguments,"ParentSectionID");
+	if ( StructKeyExists(Arguments,"ParentSectionID") AND NOT Val(Arguments.ParentSectionID) ) {
+		StructDelete(Arguments,"ParentSectionID");
 	}
 	</cfscript>
 	
@@ -179,47 +233,50 @@
 		</cfif>
 		</cfquery>
 		<cfif qGetSection.RecordCount>
-			<cfset arguments.SectionID = qGetSection.SectionID>
+			<cfset Arguments.SectionID = qGetSection.SectionID>
 		</cfif>
 		<cfif NOT StructKeyExists(arguments,"ParentSectionID")>
-			<cfset arguments.ParentSectionID = 0>
+			<cfset Arguments.ParentSectionID = 0>
 		</cfif>
 	</cfif>
 	
-	<cfif NOT StructKeyExists(arguments,"SectionID")>
-		<cfif NOT StructKeyExists(arguments,"SectionDir")> 
-			<cfset arguments.SectionDir = variables.CMS.PathNameFromString(arguments.SectionTitle)>
-		</cfif>
-		<cfset checkDirExists(arguments.SectionDir)>
-	</cfif>
+	<cfreturn Arguments>
+</cffunction>
+
+<cffunction name="validateSectionLink" access="private" returntype="struct" output="false" hint="">
 	
-	<!--- %%TODO: code for subsections --->
-	<cfif NOT StructKeyExists(arguments,"SectionID") AND NOT StructKeyExists(arguments,"SectionLink")>
-		<cfset arguments.SectionLink = "/" & arguments.SectionDir & "/">
+	<cfset var qSection = 0>
+	
+	<cfif NOT StructKeyExists(Arguments,"SectionID")>
+		<cfif NOT StructKeyExists(Arguments,"SectionDir")> 
+			<cfset Arguments.SectionDir = variables.CMS.PathNameFromString(Arguments.SectionTitle)>
+		</cfif>
+		<cfset checkDirExists(Arguments.SectionDir)>
+		
+		<cfif NOT StructKeyExists(Arguments,"SectionLink")>
+			<cfif
+					StructKeyExists(Arguments,"MainPageURL")
+				AND	Len(Trim(Arguments.MainPageURL))
+			>
+				<cfset Arguments.SectionLink = Arguments.MainPageURL>
+			<cfelse>
+				<!--- %%TODO: code for subsections --->
+				<cfset Arguments.SectionLink = "/" & Arguments.SectionDir & "/">
+			</cfif>
+		</cfif>
 	</cfif>
 	
 	<cfscript>
 	//Get previous state
-	if ( StructKeyExists(arguments,"SectionID") ) {
-		qSection = getSection(arguments.SectionID);
-		if ( Len(qSection.SectionTitle) AND NOT Len(qSection.SectionDir) AND NOT StructKeyExists(arguments,"SectionDir") ) {
-			arguments.SectionDir = variables.CMS.PathNameFromString(qSection.SectionTitle);
+	if ( StructKeyExists(Arguments,"SectionID") ) {
+		qSection = getSection(SectionID=Arguments.SectionID,fieldlist="SectionTitle,SectionDir");
+		if ( Len(qSection.SectionTitle) AND NOT Len(qSection.SectionDir) AND NOT StructKeyExists(Arguments,"SectionDir") ) {
+			Arguments.SectionDir = variables.CMS.PathNameFromString(qSection.SectionTitle);
 		}
 	}
 	</cfscript>
 	
-	<!--- Save section --->
-	<cfset result = saveRecord(argumentCollection=arguments)>
-	
-	<cfset setPathData(result)>
-	
-	<cfset variables.CMS.indexSearch()>
-	
-	<cfif StructKeyExists(arguments,"MainPageURL") AND Len(Trim(arguments.MainPageURL)) AND NOT isIndexSectionCode(result)>
-		<cfset throwError("Your changes have been saved, but an index.cfm page is already in use in this folder so the Main Page will not have any effect.","NOTisIndexSectionCode")>
-	</cfif>
-	
-	<cfreturn result>
+	<cfreturn Arguments>
 </cffunction>
 
 <cffunction name="updateLinkURL" access="public" returntype="void" output="false" hint="">
@@ -265,7 +322,7 @@
 	<cfreturn aCodeLines>
 </cffunction>
 
-<cffunction name="isIndexSectionCode" access="private" returntype="boolean" output="false" hint="">
+<cffunction name="isIndexSectionCode" access="package" returntype="boolean" output="false" hint="">
 	<cfargument name="SectionID" type="numeric" required="yes">
 	<cfargument name="isrecursed" type="boolean" default="false">
 	
@@ -296,35 +353,37 @@
 <cffunction name="setPathData" access="package" returntype="void" output="false" hint="">
 	<cfargument name="SectionID" type="numeric" required="yes">
 	
-	<cfset var qSection = getSection(arguments.SectionID)>
+	<cfset var qSection = getSection(SectionID=arguments.SectionID,fieldlist="MainPageURL,SectionTitle,SectionDir")>
 	<cfset var path = "">
-	<cfset var sData = StructNew()>
 	
 	<!--- If no Main Page URL, set it to page in section with matching title --->
 	<cfif NOT Len(qSection.MainPageURL)>
 		<cfset qPages = variables.CMS.Pages.getPages(SectionID=arguments.SectionID,Title=qSection.SectionTitle)>
 		<cfif qPages.RecordCount EQ 1>
-			<cfset sData["SectionID"] = arguments.SectionID>
-			<cfset sData["MainPageURL"] = qPages.UrlPath>
-			<cfset variables.DataMgr.saveRecord(variables.table,sData)>
-			<cfset qSection = getSection(arguments.SectionID)>
+			<cfset saveRecord(SectionID=Arguments.SectionID,MainPageURL=qPages.UrlPath)>
+			<cfset qSection = getSection(SectionID=arguments.SectionID,fieldlist="MainPageURL,SectionTitle,SectionDir")>
 		</cfif>
 	</cfif>
 	
 	<!--- Try to create new directory --->
 	<cfif Len(qSection.SectionDir)>
 		<!--- Create directory if it doesn't exist --->
-		<cfif NOT DirectoryExists( variables.CMS.getRootPath() & variables.CMS.getSectionPath(arguments.SectionID) )>
+		<cfif NOT DirectoryExists( variables.CMS.getRootPath() & variables.CMS.getSectionPath(Arguments.SectionID) )>
 			<cftry>
-				<cfdirectory action="CREATE" directory="#ExpandPath('/#variables.CMS.getSectionPath(arguments.SectionID)#')#" mode="777">
+				<cfdirectory action="CREATE" directory="#ExpandPath('/#variables.CMS.getSectionPath(Arguments.SectionID)#')#" mode="777">
 			<cfcatch>
 			</cfcatch>
 			</cftry>
 		</cfif>
 		
 		<cfset path = "#variables.CMS.getRootPath()##variables.CMS.getSectionPath(arguments.SectionID)#index.cfm">
-		<cfif Len(qSection.MainPageURL) AND NOT FileExists(ExpandPath("/#variables.CMS.getSectionPath(arguments.SectionID)#") & "index.cfm")>
-			<cffile action="write" file="#path#" output="#getIndexCode(arguments.SectionID)#" addnewline="no">
+		<cfif NOT FileExists(ExpandPath("/#variables.CMS.getSectionPath(Arguments.SectionID)#") & "index.cfm")>
+			<cfif Len(qSection.MainPageURL) AND qSection.MainPageURL NEQ "/#qSection.SectionDir#/index.cfm">
+				<cfdump var="#qSection#"><cfabort>
+				<cffile action="write" file="#path#" output="#getIndexCode(Arguments.SectionID)#" addnewline="no">
+			<cfelse>
+				<cfset Variables.CMS.savePage(SectionID=Arguments.SectionID,Title=qSection.SectionTitle,FileName="index.cfm")>
+			</cfif>
 		</cfif>
 	</cfif>
 	

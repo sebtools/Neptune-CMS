@@ -1,3 +1,30 @@
+/*
+Examples:
+instead of: <body onload="myfunction()">
+use: addEvent(window, 'load', myfunction);
+
+instead of: window.onload = myfunction;
+use: addEvent(window, 'load', myfunction);
+*/
+function addEvent(obj, evType, fn) {
+	if (obj.addEventListener){
+		obj.addEventListener(evType, fn, true);
+		return true;
+	} else if (obj.attachEvent){
+		var r = obj.attachEvent("on"+evType, fn);
+		return r;
+	} else {
+		return false;
+	}
+}
+function addEventToId(id, evType, fn) {
+	addEvent(document.getElementById(id), evType, fn);
+}
+function setStyleById(i, p, v) {
+	var n = document.getElementById(i);
+	n.style[p] = v;
+}
+
 function linkeditInsertAfter(newElement,targetElement) {
 	var parent = targetElement.parentNode;
 	if ( parent.lastChild == targetElement ) {
