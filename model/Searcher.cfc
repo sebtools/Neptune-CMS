@@ -41,8 +41,8 @@
 
 <cffunction name="index" access="public" returntype="void" output="no" hint="I index the CMS Search collection.">
 
-	<cfset var qPages = variables.CMS.getAllPages(isLive=1,fieldlist="PageID,Title,Description,Contents,Contents2,UrlPath")/>
-
+	<cfset var qPages = variables.CMS.getAllPages(isLive=1,fieldlist="PageID,Title,Description,Contents,Contents2,UrlPath,FileName,SectionID")>
+	
 	<cfinvoke component="#variables.Searcher#" method="indexQuery">
 		<cfinvokeargument name="CollectionName" value="#variables.CollectionName#">
 		<cfinvokeargument name="query" value="#qPages#">
