@@ -19,11 +19,17 @@
 	<cfsavecontent variable="result"><cfoutput><?xml version="1.0"?>
 	<program name="CMS" description="I manage site content.">
 		<components>
+			<component name="ContentBlocks" path="com.sebtools.utils.ContentBlocks">
+				<argument name="Manager" component="Manager" />
+			</component>
+			<component name="Settings" path="com.sebtools.utils.Settings">
+				<argument name="Manager" component="Manager" />
+			</component>
 			<component name="CMS" path="[path_component]model.CMS">
 				<argument name="Manager" />
 				<argument name="RootPath" />
 				<argument name="createDefaultSection" value="false" />
-				<argument name="Settings" />
+				<argument name="Settings" ifmissing="skiparg" />
 			</component>
 			<component name="SitePages" path="[path_component]model.SitePages">
 				<argument name="Manager" />
