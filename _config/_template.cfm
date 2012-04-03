@@ -1,5 +1,5 @@
 <!--- Go to "Content" under the administration section in order to edit this page --->
-<!-- nosearchy -->
+<!--- nosearchy --->
 <cfif Len(qPage.Layout)>
 	<cftry>
 		<cf_layout switch="#qPage.Layout#">

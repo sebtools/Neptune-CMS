@@ -13,7 +13,7 @@
 	<cfargument name="Settings" type="any" required="false">
 	
 	<cfif NOT Len(Arguments.skeleton)>
-		<cfset Arguments.skeleton = '<!-- nosearchy --><cfset qPage = Application.CMS.getPage([PageID])>
+		<cfset Arguments.skeleton = '<!--- nosearchy ---><cfset qPage = Application.CMS.getPage([PageID])>
 <cfinclude template="/admin/cms/_config/_template.cfm">'>
 	</cfif>
 	
@@ -90,6 +90,24 @@
 
 <cffunction name="getRootPath" access="public" returntype="string" output="no">
 	<cfreturn variables.RootPath>
+</cffunction>
+
+<cffunction name="getSiteLinks" access="public" returntype="query" output="no">
+	
+	<cfset var qLinks = 0>
+	
+	<cf_DMQuery name="qLinks">
+	SELECT		cmsSections.SectionID,SectionTitle,SectionLink,
+				LinkID,Label,LinkURL
+	FROM		cmsSections
+	LEFT JOIN	cmsLinks
+		ON		cmsSections.SectionID = cmsLinks.SectionID
+	WHERE		1 = 1
+	<cf_DMSQL tablename="cmsSections" method="getWhereSQL" data="#Arguments#">
+	ORDER BY	cmsSections.ordernum, cmsLinks.ordernum
+	</cf_DMQuery>
+	
+	<cfreturn qLinks>
 </cffunction>
 
 <cffunction name="getSiteMap" access="public" returntype="query" output="false" hint="">

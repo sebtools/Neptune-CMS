@@ -379,7 +379,6 @@
 		<cfset path = "#variables.CMS.getRootPath()##variables.CMS.getSectionPath(arguments.SectionID)#index.cfm">
 		<cfif NOT FileExists(ExpandPath("/#variables.CMS.getSectionPath(Arguments.SectionID)#") & "index.cfm")>
 			<cfif Len(qSection.MainPageURL) AND qSection.MainPageURL NEQ "/#qSection.SectionDir#/index.cfm">
-				<cfdump var="#qSection#"><cfabort>
 				<cffile action="write" file="#path#" output="#getIndexCode(Arguments.SectionID)#" addnewline="no">
 			<cfelse>
 				<cfset Variables.CMS.savePage(SectionID=Arguments.SectionID,Title=qSection.SectionTitle,FileName="index.cfm")>

@@ -261,6 +261,9 @@
 	if ( StructKeyExists(arguments,"SectionID") ) {
 		arguments.SectionID = Val(arguments.SectionID);
 	}
+	if ( StructKeyExists(Arguments,"Section") AND isSimpleValue(Arguments.Section) AND Len(Arguments.Section) AND NOT Arguments.SectionID ) {
+		Arguments.SectionID = Variables.CMS.Sections.getSectionID(Arguments.Section);
+	}
 	
 	//If a file name is passed in that doesn't match the existing name for this page, then make this a new page.
 	if ( StructKeyExists(arguments,"PageID") ) {
