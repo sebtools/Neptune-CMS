@@ -20,7 +20,7 @@
 	<cf_sebField name="VersionDescription" label="Change Notes" setValue="" help="<br/>Enter brief notes about your changes.">
 	<cf_sebField name="Contents" type="FCKeditor" height="300">
 	<cf_sebField name="VersionDescription" label="Change Notes" setValue="" help="<br/>Enter brief notes about your changes.">
-	<cf_sebField name="VersionBy" type="hidden" setValue="#Author#">
+	<cf_sebField name="VersionBy" type="hidden">
 	<input type="button" name="btnPreview" id="btnPreview" value="Preview" />
 	<cf_sebField type="Submit/Cancel" label="Restore">
 </cf_sebForm>

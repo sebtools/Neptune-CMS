@@ -283,6 +283,9 @@
 		if ( NOT StructKeyExists(arguments,"PageName") OR NOT Len(arguments.PageName) ) {
 			arguments.PageName = ReplaceNoCase(arguments.Title, " ", "_", "ALL");
 		}
+		if ( NOT ( StructKeyExists(Arguments,"TemplateID") AND Val(Arguments.TemplateID) ) ) {
+			Arguments.TemplateID = Variables.CMS.Templates.getDefaultTemplateID();
+		}
 	}
 	if ( StructKeyExists(arguments,"FileName") ) {
 		arguments.FileName = variables.CMS.FileNameFromString(arguments.FileName);
@@ -306,6 +309,17 @@
 	>
 		<cfset arguments.FileName = "my#arguments.FileName#">
 	</cfif>
+	
+	<cfscript>
+	for ( col in Arguments ) {
+		if (
+				isSimpleValue(Arguments[col])
+			AND	Len(Arguments[col]) GT 200
+		) {
+			Arguments[col] = Variables.CMS.cleanMSWord(Arguments[col]);
+		}
+	}
+	</cfscript>
 
 	<!--- Check if file name already exists --->
 	<cfif StructKeyExists(arguments,"FileName")>

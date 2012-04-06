@@ -11,6 +11,7 @@
 	
 	<cfset vars.qSections = variables.Sections.getSections()>
 	<cfset vars.sLinks = StructNew()>
+	<cfset vars.Title = vars.TitleBase>
 	<cfif URL.section>
 		<cfset local.qSection = variables.Sections.getSection(URL.section)>
 		<cfset vars.Title = '#vars.Title# for <a href="section-edit.cfm?id=#URL.section#">#local.qSection.SectionTitle#</a>'>

@@ -2,6 +2,10 @@
 <cfset fields = "Title,Description,Keywords,Contents,Contents2,SectionID">
 <cfloop index="field" list="#fields#"><cfparam name="Form.#field#" default=""></cfloop>
 
+<cfloop collection="#Form#" item="field">
+	<cfset Form[field] = Application.CMS.cleanMSWord(Form[field])>
+</cfloop>
+
 <cfif StructKeyExists(Form,"PageID") AND StructKeyExists(Form,"PageVersionID")>
 	<cfinvoke component="#Application.CMS#" method="getPage" returnvariable="qPage">
 		<cfinvokeargument name="PageID" value="#Val(Form.PageID)#">

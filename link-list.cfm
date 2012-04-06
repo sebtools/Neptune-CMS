@@ -8,11 +8,9 @@
 
 <p>You can control the site menu from here.</p>
 
-<cf_sebTable width="90%">
+<cf_sebTable width="90%" isEditable="true" isDeletable="true">
 	<cf_sebColumn dbfield="ordernum">
 	<cf_sebColumn dbfield="Label">
-	<cf_sebColumn link="link-edit.cfm?section=#URL.section#&id=" label="edit">
-	<cf_sebColumn type="delete">
 </cf_sebTable>
 
 </cf_Template>

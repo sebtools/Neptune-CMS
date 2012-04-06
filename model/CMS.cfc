@@ -396,6 +396,11 @@
 				</cfif>
 			</cfif>
 		<cfelse>
+			
+			<cfif NOT DirectoryExists(getDirectoryFromPath(qPage.FullFilePath))>
+				<cfdirectory directory="#getDirectoryFromPath(qPage.FullFilePath)#" action="create">
+			</cfif>
+			
 			<cffile action="WRITE" file="#qPage.FullFilePath#" output="#output#">
 		</cfif>
 	</cfif>
@@ -628,6 +633,64 @@
 	
 </cffunction>
 
+<cffunction name="cleanMSWord" access="public" returntype="string" output="false">
+	<cfargument name="str" stype="string" required="yes">
+<!---
+Credits:
+http://enabofaisal.wordpress.com/2011/07/28/cf-function-to-clean-ms-word-html-mess/
+--->
+	<cfset var result = Arguments.str>
+	<cfset var start = 0>
+	<cfset var end = 0>
+	
+	<cfif NOT Len(Trim(result))><cfreturn "" /></cfif>
+	
+	<!--- Remove MS Word's comments while allowing other comments --->
+	<cfset result = ReReplaceNoCase(result,"(<!--\[if).*?(<!\[endif\]-->)","","ALL")>
+	
+	<!--- remove most of the unwanted HTML attributes with their values --->
+	<cfset result = ReReplaceNoCase(result,'[ ]+(style|align|valign|dir|class|id|lang|width|height|nowrap)=".*?"',"","ALL")>
+	
+	<cfset result = ReReplace(result,"Mso.*?[#chr(34)#]",'"',"ALL")>
+	<cfset result = Replace(result," class=''","","ALL")>
+	<cfset result = Replace(result,' class=""',"","ALL")>
+	
+ 	<cfset result = Replace(result,"&lsquo;","'","ALL")>
+	<cfset result = Replace(result,"&rsquo;","'","ALL")>
+	
+	<cfset result = Replace(result,"&middot;","","ALL")>
+	
+	<cfscript>
+	/*
+	while ( FindNoCase("<span> </span>",result) ) {
+		result = REReplace(result, "<span> </span>", " ", "ALL");
+	}
+	*/
+	while ( FindNoCase("<span>",result) ) {
+		start = FindNoCase("<span>",result);
+		end = FindNoCase("</span>",result,start-1);
+		result = Left(result,end-1) & Right(result,Len(result)-end-Len("</span>")+1);
+		result = Left(result,start-1) & Right(result,Len(result)-start-Len("<span>")+1);
+	}
+	</cfscript>
+	
+	<!--- clean extra spaces & tabs --->
+	<cfset result = REReplace(result, "(&nbsp;)", " ", "ALL")>
+	<cfset result = REReplace(result, "\s{2,}", " ", "ALL")>
+	
+	<!--- remove empty <b> empty tags --->
+ 	<cfset result = REReplace(result, "<b>\s*</b>", "", "ALL") />
+	<!--- remove empty <b> empty tags --->
+ 	<cfset result = REReplace(result, "<strong>\s*</strong>", "", "ALL") />
+ 	
+ 	<!--- remove empty <p> empty tags --->
+ 	<cfset result = REReplace(result, "<p>\s*", "<p>", "ALL") />
+ 	<cfset result = REReplace(result, "\s*</p>", "</p>", "ALL") />
+ 	<cfset result = REReplace(result, "<p></p>", "", "ALL") />
+	 
+	<cfreturn result>
+</cffunction>
+
 <cffunction name="xml" access="public" output="yes">
 <tables prefix="#variables.prefix#">
 	<table entity="Page" labelField="Title" folder="pages">
@@ -818,8 +881,9 @@
 		<field name="ImageSize" Label="Image Size" type="text" Length="50" />
 		<field name="hasMultipleImages" Label="has Multiple Images" type="boolean" />
 		<field name="NumContentAreas" Label="Num Content Areas" type="integer" />
+		<field name="isDefaultTemplate" Label="Default Templatea" type="boolean" default="false" />
 		<data>
-			<row TemplateName="Default" />
+			<row TemplateName="Default" isDefaultTemplate="true" />
 		</data>
 	</table>
 	<table entity="Template Section" labelField="Marker">

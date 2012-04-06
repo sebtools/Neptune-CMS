@@ -26,8 +26,6 @@
 		>
 		<cf_sebColumn dbfield="ordernum">
 		<cf_sebColumn dbfield="Label">
-		<cf_sebColumn link="link-edit.cfm?section=#URL.id#&id=" label="edit">
-		<cf_sebColumn type="delete">
 	</cf_sebTable>
 	
 	<p>&nbsp;</p>
@@ -40,8 +38,6 @@
 		>
 		<cf_sebColumn dbfield="Title">
 		<cf_sebColumn dbfield="isPageLive">
-		<cf_sebColumn link="page-edit.cfm?section=#URL.id#&id=" label="edit">
-		<cf_sebColumn type="delete">
 	</cf_sebTable>
 	
 </cfif>
