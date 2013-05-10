@@ -424,6 +424,10 @@
 	<cfreturn This.ContentFiles.getContentFiles(argumentCollection=arguments)>
 </cffunction>
 
+<cffunction name="addPage" access="public" returntype="numeric" output="false" hint="I add a page after checking for its existence.">
+	<cfset Variables.Pages.addPage(ArgumentCollection=Arguments)>
+</cffunction>
+
 <cffunction name="getPage" access="public" returntype="query" output="no" hint="I get all of the information for the given page.">
 	<cfargument name="PageID" type="numeric" required="yes">
 	<cfargument name="SiteVersionID" type="numeric" required="no">

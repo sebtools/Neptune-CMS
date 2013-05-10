@@ -1,5 +1,26 @@
 <cfcomponent displayname="Pages" extends="com.sebtools.Records" output="no">
 
+<cffunction name="addPage" access="public" returntype="numeric" output="false" hint="I add a page after checking for its existence.">
+	<cfargument name="URLPath" type="string" required="true" >
+	<cfargument name="Title" type="string" required="true" >
+	<cfargument name="Contents" type="string" required="true" >
+	
+	<cfset var pageExists=false>
+	<cfset var qExistingPages = getPages(fieldList="URLPath,PageID")>
+	<cfset var pageID=0>
+	<cfloop query="qExistingPages">
+		<cfif URLPath IS Arguments.URLPath>
+			<cfset pageExists=true />
+			<cfset pageID=qExistingPages.pageID>
+		</cfif>
+	</cfloop>
+	<cfif NOT pageExists>
+		<cfset StructDelete(arguments,"URLPath")>
+		<cfset pageID=savePage(ArgumentCollection=Arguments)>
+	</cfif>
+	<cfreturn pageID>
+</cffunction>
+	
 <cffunction name="copyPage" access="public" returntype="void" output="no">
 	<cfargument name="PageID" type="numeric" required="yes">
 	<cfargument name="FileName" type="string" required="yes">
