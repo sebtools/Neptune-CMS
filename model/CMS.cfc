@@ -82,8 +82,15 @@
 <cffunction name="getFullFilePath" access="public" returntype="string">
 	<cfargument name="SectionID" type="numeric" required="yes">
 	<cfargument name="FileName" type="string" required="yes">
+	<cfargument name="UrlPath" type="string" required="no">
 	
-	<cfset var result = variables.RootPath & getSectionPath(SectionID) & FileName>
+	<cfset var result = variables.RootPath>
+	
+	<cfif StructKeyExists(Arguments,"UrlPath") AND Len(Arguments.UrlPath)>
+		<cfset result = result & Right(UrlPath,Len(UrlPath)-1)>
+	<cfelse>
+		<cfset result = result & getSectionPath(SectionID) & FileName>
+	</cfif>
 	
 	<cfreturn result>
 </cffunction>
@@ -425,7 +432,7 @@
 </cffunction>
 
 <cffunction name="addPage" access="public" returntype="numeric" output="false" hint="I add a page after checking for its existence.">
-	<cfset Variables.Pages.addPage(ArgumentCollection=Arguments)>
+	<cfreturn Variables.Pages.addPage(ArgumentCollection=Arguments)>
 </cffunction>
 
 <cffunction name="getPage" access="public" returntype="query" output="no" hint="I get all of the information for the given page.">
@@ -624,15 +631,39 @@
 
 <cffunction name="upgrade" access="public" returntype="any" output="false" hint="">
 	
+	<cfset upgradeParentSections()>
+	<cfset upgradeURLPaths()>
+	
+</cffunction>
+
+<cffunction name="upgradeParentSections" access="public" returntype="any" output="false" hint="">
+	
 	<cfset var sSet = StructNew()>
 	<cfset var sWhere = StructNew()>
-	
 	
 	<cfif This.Sections.hasSections(ParentSectionID="")>
 		<cfset sSet["ParentSectionID"] = 0>
 		<cfset sWhere["ParentSectionID"] = "">
 		
 		<cfset variables.DataMgr.updateRecords(tablename=This.Sections.getTableVariable(),data_set=sSet,data_where=sWhere)>
+	</cfif>
+	
+</cffunction>
+
+<cffunction name="upgradeURLPaths" access="public" returntype="any" output="false" hint="">
+	
+	<cfset var qPages = 0>
+	
+	<cfif NOT Variables.Pages.hasPages(hasUrlPath=true)>
+		<cfset qPages = Variables.Pages.getPages(UrlPath="",fieldlist="PageID,SectionID,FileName")>
+		
+		<cfoutput query="qPages">
+			<cfset Variables.Pages.saveRecord(
+				PageID=PageID,
+				UrlPath=getUrlPath(Val(SectionID),FileName)
+			)>
+		</cfoutput>
+		
 	</cfif>
 	
 </cffunction>
@@ -706,7 +737,7 @@ http://enabofaisal.wordpress.com/2011/07/28/cf-function-to-clean-ms-word-html-me
 		<field name="ImageFileName" Label="Image File Name" type="text" Length="180" />
 		<field name="isDeleted" Label="is Deleted" type="DeletionMark" />
 		<field name="Title" Label="Title" type="text" Length="250" required="true" />
-		<field name="WhenCreated" Label="When Created" type="date" />
+		<field name="WhenCreated" Label="When Created" type="CreationDate" />
 		<field name="Description" Label="Description" type="text" Length="240" />
 		<field name="Keywords" Label="Keywords" type="text" Length="240" useInMultiRecordsets="false" />
 		<field name="Contents" Label="Contents" type="html" useInMultiRecordsets="false" />
@@ -719,8 +750,9 @@ http://enabofaisal.wordpress.com/2011/07/28/cf-function-to-clean-ms-word-html-me
 		<field name="FullFilePath">
 			<relation type="custom" />
 		</field>
-		<field name="UrlPath">
-			<relation type="custom" />
+		<field name="UrlPath" label="URL Path" type="text" Length="500" />
+		<field name="hasUrlPath">
+			<relation type="has" field="UrlPath" />
 		</field>
 		<field name="FileOutput" useInMultiRecordsets="false">
 			<relation type="custom" />

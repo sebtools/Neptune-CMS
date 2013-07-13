@@ -5,26 +5,20 @@
 	<cfargument name="Title" type="string" required="true" >
 	<cfargument name="Contents" type="string" required="true" >
 	
-	<cfset var pageExists=false>
-	<cfset var qExistingPages = getPages(fieldList="URLPath,PageID")>
-	<cfset var pageID=0>
-	<cfloop query="qExistingPages">
-		<cfif URLPath IS Arguments.URLPath>
-			<cfset pageExists=true />
-			<cfset pageID=qExistingPages.pageID>
-		</cfif>
-	</cfloop>
-	<cfif NOT pageExists>
-		<cfset StructDelete(arguments,"URLPath")>
-		<cfset pageID=savePage(ArgumentCollection=Arguments)>
+	<cfset var result = 0>
+	
+	<cfif NOT hasPages(URLPath=Arguments.URLPath)>
+		<cfset result = savePage(ArgumentCollection=Arguments)>
 	</cfif>
-	<cfreturn pageID>
+	
+	<cfreturn result>
 </cffunction>
 	
 <cffunction name="copyPage" access="public" returntype="void" output="no">
 	<cfargument name="PageID" type="numeric" required="yes">
 	<cfargument name="FileName" type="string" required="yes">
 	<cfargument name="SectionID" type="string" required="no">
+	<cfargument name="URLPath" type="string" required="no">
 	
 	<cfset var qPage = getPage(arguments.PageID)>
 	<cfset var sPage = variables.CMS.QueryRowToStruct(qPage)>
@@ -38,6 +32,10 @@
 	
 	<cfif StructKeyExists(arguments,"SectionID")>
 		<cfset sPage.SectionID = arguments.SectionID>
+	</cfif>
+	
+	<cfif StructKeyExists(arguments,"URLPath")>
+		<cfset sPage.URLPath = arguments.URLPath>
 	</cfif>
 	
 	<!--- Take advantage of new "copyRecord" method (which copies files as well) if it is available --->
@@ -209,7 +207,7 @@
 	
 	<cfset arguments.FileName = variables.CMS.FileNameFromString(arguments.FileName)>
 	
-	<cfif isFileExisting(arguments.FileName,arguments.PageID)>
+	<cfif isFileExisting(ArgumentCollection=Arguments)>
 		<cfset throwError("The entered file name is already in use for another page.")>
 	</cfif>
 	
@@ -298,8 +296,12 @@
 	if ( NOT StructKeyExists(arguments,"PageID") ) {
 		//Make File Name
 		if ( NOT StructKeyExists(arguments,"FileName") OR NOT Len(arguments.FileName) ) {
-			arguments.FileName = arguments.Title;
-			isManuallyChosenFileName = false;
+			if ( StructKeyExists(Arguments,"URLPath") AND Len(Arguments.URLPath) ) {
+				Arguments.FileName = ListLast(Arguments.URLPath,"/");
+			} else {
+				arguments.FileName = arguments.Title;
+				isManuallyChosenFileName = false;
+			}
 		}
 		if ( NOT StructKeyExists(arguments,"PageName") OR NOT Len(arguments.PageName) ) {
 			arguments.PageName = ReplaceNoCase(arguments.Title, " ", "_", "ALL");
@@ -318,7 +320,7 @@
 	
 	<!--- No longer allow "index.cfm" or "default.cfm", so that can be used by section --->
 	<cfif
-		StructKeyExists(arguments,"FileName")
+			StructKeyExists(arguments,"FileName")
 		AND (
 					ListFirst(arguments.FileName,".") EQ "index"
 				OR	ListFirst(arguments.FileName,".") EQ "default"
@@ -329,6 +331,26 @@
 			)
 	>
 		<cfset arguments.FileName = "my#arguments.FileName#">
+	</cfif>
+	
+	<!--- Make sure we have a value for UrlPath for new pages --->
+	<cfif
+			StructKeyExists(Arguments,"FileName")
+		AND	NOT StructKeyExists(arguments,"PageID")
+		AND	NOT (
+					StructKeyExists(Arguments,"UrlPath")
+				AND	Len(Arguments.UrlPath)
+			)
+	>
+		<cfset Arguments.UrlPath = Variables.CMS.getUrlPath(Val(Arguments.SectionID),Arguments.FileName)>
+	</cfif>
+	
+	<!--- Make sure that the URLPath matches the file name --->
+	<cfif StructKeyExists(Arguments,"UrlPath") AND Len(Arguments.UrlPath) AND StructKeyExists(Arguments,"FileName")>
+		<cfset Arguments.UrlPath = ListSetAt(Arguments.UrlPath,ListLen(Arguments.UrlPath,"/"),Arguments.FileName,"/")>
+		<cfif Left(Arguments.UrlPath,1) NEQ "/">
+			<cfset Arguments.UrlPath = "/#Arguments.UrlPath#">
+		</cfif>
 	</cfif>
 	
 	<cfscript>
@@ -344,15 +366,7 @@
 
 	<!--- Check if file name already exists --->
 	<cfif StructKeyExists(arguments,"FileName")>
-		<cfinvoke returnvariable="isExistingFile" method="isFileExisting">
-			<cfinvokeargument name="FileName" value="#arguments.FileName#">
-			<cfif StructKeyExists(arguments,"PageID")>
-				<cfinvokeargument name="PageID" value="#arguments.PageID#">
-			</cfif>
-			<cfif StructKeyExists(arguments,"SectionID")>
-				<cfinvokeargument name="SectionID" value="#arguments.SectionID#">
-			</cfif>
-		</cfinvoke>
+		<cfset isExistingFile = isFileExisting(ArgumentCollection=Arguments)>
 		<cfif isExistingFile>
 			<!--- If file exists, err if chosen manually. If automatically chosen just fix it. --->
 			<cfif isManuallyChosenFileName>
@@ -495,18 +509,14 @@
 	
 	<cfoutput query="qPages">
 		<!--- Calculate file paths, if appropriate data is present --->
-		<cfif ListFindNoCase(qPages.ColumnList,"FileName") AND ListFindNoCase(qPages.ColumnList,"SectionID")>
+		<cfif ListFindNoCase(qPages.ColumnList,"UrlPath")>
 			<cfif ListFindNoCase(qPages.ColumnList,"FullFilePath")>
 				<cfset QuerySetCell(
 					qPages,
 					"FullFilePath",
-					variables.CMS.getRootPath() & variables.CMS.getSectionPath(Val(SectionID)) & FileName,
+					variables.CMS.getFullFilePath(SectionID=0,FileName="",URLPath=URLPath),
 					CurrentRow
 				)>
-			</cfif>
-			<cfif ListFindNoCase(qPages.ColumnList,"UrlPath")>
-				<cfset QuerySetCell(qPages, "UrlPath", variables.CMS.getUrlPath(Val(SectionID),FileName), CurrentRow)>
-				<cfset ArrayAppend(aIsInMenu,Min(1,variables.CMS.Links.getLinksCount(LinkURL=UrlPath)))>
 			</cfif>
 		</cfif>
 		<!--- Adjust Contents if that column exists --->
@@ -571,6 +581,7 @@
 	<cfargument name="FileName" type="string" required="yes">
 	<cfargument name="PageID" type="numeric" required="no">
 	<cfargument name="SectionID" type="numeric" required="no">
+	<cfargument name="URLPath" type="string" required="no">
 	
 	<cfset var qCheckFileName = 0>
 	<cfset var qPageOld = 0>
@@ -589,7 +600,7 @@
 		</cfif>
 	</cfif>
 	
-	<cfset TargetPath = variables.CMS.getFullFilePath(arguments.SectionID,arguments.FileName)>
+	<cfset TargetPath = variables.CMS.getFullFilePath(ArgumentCollection=Arguments)>
 	
 	<cfif FileExists(TargetPath)>
 		<cfif StructKeyExists(arguments,"PageID")>
@@ -604,7 +615,7 @@
 	
 	<cfif NOT result>
 		<cfquery name="qCheckFileName" datasource="#variables.datasource#">
-		SELECT	PageID,SectionID,FileName
+		SELECT	PageID,SectionID,FileName,URLPath
 		FROM	cmsPages
 		WHERE	FileName = <cfqueryparam value="#arguments.FileName#" cfsqltype="CF_SQL_VARCHAR">
 		<cfif StructKeyExists(arguments,"PageID")>
@@ -614,7 +625,7 @@
 		</cfquery>
 		
 		<cfif qCheckFileName.RecordCount>
-			<cfif TargetPath EQ variables.CMS.getFullFilePath(Val(qCheckFileName.SectionID),qCheckFileName.FileName)>
+			<cfif TargetPath EQ variables.CMS.getFullFilePath(SectionID=Val(qCheckFileName.SectionID),FileName=qCheckFileName.FileName,URLPath=qCheckFileName.URLPath)>
 				<cfset isExistingFile = true>
 			</cfif>
 		</cfif>
