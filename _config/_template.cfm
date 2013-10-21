@@ -1,5 +1,5 @@
 <!--- Go to "Content" under the administration section in order to edit this page --->
-<!--- nosearchy --->
+<!-- nosearchy -->
 <cfif Len(qPage.Layout)>
 	<cftry>
 		<cf_layout switch="#qPage.Layout#">
@@ -8,7 +8,10 @@
 	</cftry>
 </cfif>
 
-<cf_Template title="#qPage.Title#" meta_description="#qPage.Description#" meta_keywords="#qPage.Keywords#" showTitle="false">
+<cf_layout title="#qPage.Title#"><cfif Len(qPage.Description)>
+	<cfoutput><meta name="Description" content="#qPage.Description#" /></cfoutput></cfif><cfif Len(qPage.Keywords)>
+	<cfoutput><meta name="Keywords" content="#qPage.Keywords#" /></cfoutput></cfif>
+<cf_layout>
 
 <cfoutput query="qPage">
 
@@ -20,4 +23,4 @@
 <cfif Len(IncludeFile)><cfinclude template="#IncludeFile#"></cfif>
 </cfoutput>
 
-</cf_Template>
+<cf_layout>

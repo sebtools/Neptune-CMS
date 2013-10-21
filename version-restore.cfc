@@ -14,6 +14,7 @@
 	<!--- Defaults for local variables --->
 	<cfset local["Action"] = "Restore">
 	<cfset local["Title"] = "Version">
+	<cfset vars["Author"] = "">
 	
 	<cfset vars["Title"] = "#local.Action# #local.Title#">
 	

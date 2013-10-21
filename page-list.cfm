@@ -15,9 +15,10 @@
 >
 	<cf_sebColumn dbfield="Title">
 	<cfif qTemplates.RecordCount GT 1>
-		<cf_sebColumn dbfield="Template" label="Template">
+		<cf_sebColumn dbfield="TemplateName" label="Template">
 	</cfif>
 	<cf_sebColumn dbfield="isPageLive">
+	<cf_sebColumn dbfield="UrlPath">
 	<cf_sebColumn link="page-edit.cfm?section=#URL.section#&id=" label="edit">
 	<cf_sebColumn link="page-view.cfm?&id=" label="view" target="_blank">
 	<cf_sebColumn link="page-delete.cfm?section=#URL.section#&id=" label="delete">

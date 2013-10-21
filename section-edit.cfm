@@ -8,6 +8,7 @@
 >
 	<cf_sebField name="ParentSectionID" type="hidden" setvalue="#Val(URL.parent)#">
 	<cf_sebField name="SectionTitle">
+	<cf_sebField name="SectionDir">
 	<cfif showMainURL>
 		<cf_sebField name="MainPageURL" type="select" size="1" subquery="qPages" subvalues="URLPath" subdisplays="Title">
 	</cfif>

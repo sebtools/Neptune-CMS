@@ -88,7 +88,7 @@
 	<!--- Get template information if one exists for this page. --->
 	<cfif isNumeric(vars.qPage.TemplateID) AND StructKeyExists(variables,"Templates")>
 		<cfset vars.qTemplate = variables.Templates.getTemplate(vars.qPage.TemplateID)>
-		<cfif vars.qTemplate.NumTemplateSections>
+		<cfif Val(vars.qTemplate.NumTemplateSections)>
 			<cfset vars.hasImages = false>
 		</cfif>
 	</cfif>

@@ -10,12 +10,12 @@ Add the following immediately after the "cffunction" tag with a name of "body":
 
 To output your sections, use code similar to the following (your HTML may vary):
 <cfoutput query="qSections">
-	<li><a href="#SectionLink#"<cfif SectionID EQ CurrentSectionID> id="active"</cfif>>#SectionTitle#</a></li>
+	<li><a href="#SectionLink#"<cfif SectionID EQ CurrentSectionID> class="active"</cfif>>#SectionTitle#</a></li>
 </cfoutput>
 
 Then, use code similar to the following to output your menu HTML (not your code may vary):
 <cfoutput query="qLinks">
-	<li><a href="#LinkURL#"<cfif variables.SCRIPT_NAME EQ LinkURL> id="active"</cfif>>#Label#</a></li>
+	<li><a href="#LinkURL#"<cfif variables.SCRIPT_NAME EQ LinkURL> class="active"</cfif>>#Label#</a></li>
 </cfoutput>
 
 The important thing to not here is your are surrounding the code for each link with a <cfoutput />

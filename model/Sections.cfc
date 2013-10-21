@@ -80,7 +80,13 @@
 	
 	<!--- %%TODO: code for subsections --->
 	<cfset var SectionID = 0>
-	<cfset var qSection = getRecord(argumentCollection=arguments)>
+	<cfset var qSection = 0>
+	<cfset var sArgs = StructCopy(Arguments)>
+	
+	<cfset sArgs.fieldlist="SectionID">
+	<cfset sArgs["SectionDir"] = ListFirst(sArgs.SectionDir,"/")>
+	
+	<cfset qSection = getRecord(argumentCollection=sArgs)>
 	
 	<cfif qSection.RecordCount>
 		<cfset SectionID = qSection.SectionID>
@@ -248,9 +254,10 @@
 	<cfset var qSection = 0>
 	
 	<cfif NOT StructKeyExists(Arguments,"SectionID")>
-		<cfif NOT StructKeyExists(Arguments,"SectionDir")> 
-			<cfset Arguments.SectionDir = variables.CMS.PathNameFromString(Arguments.SectionTitle)>
+		<cfif NOT ( StructKeyExists(Arguments,"SectionDir") AND Len(Arguments.SectionDir) )> 
+			<cfset Arguments.SectionDir = Arguments.SectionTitle>
 		</cfif>
+		<cfset Arguments.SectionDir = variables.CMS.PathNameFromString(Arguments.SectionDir)>
 		<cfset checkDirExists(Arguments.SectionDir)>
 		
 		<cfif NOT StructKeyExists(Arguments,"SectionLink")>
@@ -366,7 +373,7 @@
 	</cfif>
 	
 	<!--- Try to create new directory --->
-	<cfif Len(qSection.SectionDir)>
+	<cfif Variables.CMS.getVariable("UseFiles") AND Len(qSection.SectionDir)>
 		<!--- Create directory if it doesn't exist --->
 		<cfif NOT DirectoryExists( variables.CMS.getRootPath() & variables.CMS.getSectionPath(Arguments.SectionID) )>
 			<cftry>

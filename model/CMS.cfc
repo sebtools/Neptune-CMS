@@ -11,9 +11,10 @@
 	<cfargument name="OnlyOverwriteCMS" type="boolean" default="true">
 	<cfargument name="Searcher" type="any" required="false">
 	<cfargument name="Settings" type="any" required="false">
+	<cfargument name="UseFiles" type="boolean" default="true">
 	
 	<cfif NOT Len(Arguments.skeleton)>
-		<cfset Arguments.skeleton = '<!--- nosearchy ---><cfset qPage = Application.CMS.getPage([PageID])>
+		<cfset Arguments.skeleton = '<!-- nosearchy --><cfset qPage = Application.CMS.getPage([PageID])>
 <cfinclude template="/admin/cms/_config/_template.cfm">'>
 	</cfif>
 	
@@ -25,6 +26,9 @@
 	</cfif>
 	
 	<cfset loadInitialData()>
+	<cfset loadScriptNameMap()>
+	
+	<cfset upgrade()>
 	
 	<cfreturn This>
 </cffunction>
@@ -48,6 +52,32 @@
 			<cfinvokeargument name="SectionTitle" value="main">
 		</cfinvoke>
 	</cfif>
+	
+</cffunction>
+
+<cffunction name="getPageID" access="public" returntype="numeric" output="no" hint="I return the PageID from the SCRIPT_NAME.">
+	<cfargument name="ScriptName" type="string" required="yes">
+	
+	<cfset var result = 0>
+	
+	<cfif Right(Arguments.ScriptName,1) EQ "/">
+		<cfset Arguments.ScriptName = "#ScriptName#index.cfm">
+	</cfif>
+	
+	<cfreturn Val(Variables.Pages.getPrimaryKeyValues(URLPath=Arguments.ScriptName))>
+</cffunction>
+
+<cffunction name="loadScriptNameMap" access="package" returntype="void" output="false" hint="">
+	
+	<cfset var qPages = 0>
+	
+	<cfset Variables.sScriptNamesPages = StructNew()>
+	
+	<cfset qPages = Pages.getPages(fieldlist="PageID,UrlPath")>
+	
+	<cfoutput query="qPages">
+		<cfset Variables.sScriptNamesPages[UrlPath] = PageID>
+	</cfoutput>
 	
 </cffunction>
 
@@ -306,6 +336,8 @@
 	<cfset var ii = 0>
 	<cfset var result = "">
 	
+	<cfset string = ReplaceNoCase(string,"'","","ALL")>
+	
 	<cfloop index="ii" from="1" to="#Len(string)#" step="1">
 		<cfif REFindNoCase(reChars, Mid(string,ii,1))>
 			<cfset result = result & Mid(string,ii,1)>
@@ -361,7 +393,7 @@
 	<cfargument name="skeleton" type="string" required="no" hint="The HTML skeleton to feed the contents of the page into. The name of any field can be placed in brackets and will be replaced by the contents of that field for the given page. For example, to place the contents of the page, use [Contents] as place-holder.">
 	<cfargument name="overwrite" type="boolean" default="true" hint="Should an existing file be overwritten. If false, makeFiles() will not create a file if it already exists.">
 	
-	<cfset var qPage = getPage(arguments.PageID)>
+	<cfset var qPage = 0>
 	<cfset var output = "">
 	<cfset var col = "">
 	
@@ -371,44 +403,42 @@
 	<cfset var CRLF = "
 ">
 	
-	<cfif NOT StructKeyExists(arguments,"skeleton")>
-		<cfset arguments.skeleton = getSkeleton()>
-	</cfif>
-	<cfset output = arguments.skeleton>
-	
-	<cfif NOT FindNoCase(queryline,output)>
-		<cfset output = "#queryline##CRLF##output#">
-	</cfif>
-	
-	<cfloop index="col" list="#qPage.ColumnList#">
-		<cfset output = ReplaceNoCase(output, "[#col#]", qPage[col][1], "ALL")>
-	</cfloop>
-	
-	<cfif Len(qPage.FileName) AND Len(output)>
-		<cfif FileExists(qPage.FullFilePath)>
-			<!--- Only overwrite existing pages if overwrite argument is true and page is a CMS page --->
-			<cfif arguments.overwrite>
-				<cfset isCmsPage = false>
-				<cffile action="READ" file="#qPage.FullFilePath#" variable="precode">
-				<cfif FindNoCase("CMS", precode) AND FindNoCase("nosearchy", precode)>
-					<cfset isCmsPage = true>
-				</cfif>
-				<!--- Overwrite CMS pages, otherwise delete --->
-				<cfif isCmsPage OR NOT variables.OnlyOverwriteCMS>
-					<cfif NOT FindNoCase("nowritey", precode)>
-						<cffile action="WRITE" file="#qPage.FullFilePath#" output="#output#">
+	<cfif Variables.UseFiles>
+		<cfset qPage = getPage(arguments.PageID)>
+		<cfif NOT StructKeyExists(arguments,"skeleton")>
+			<cfset arguments.skeleton = getSkeleton()>
+		</cfif>
+		<cfset output = arguments.skeleton>
+		
+		<cfif NOT FindNoCase(queryline,output)>
+			<cfset output = "#queryline##CRLF##output#">
+		</cfif>
+		
+		<cfloop index="col" list="#qPage.ColumnList#">
+			<cfset output = ReplaceNoCase(output, "[#col#]", qPage[col][1], "ALL")>
+		</cfloop>
+		
+		<cfif Len(qPage.FileName) AND Len(output)>
+			<cfif FileExists(qPage.FullFilePath)>
+				<!--- Only overwrite existing pages if overwrite argument is true and page is a CMS page --->
+				<cfif arguments.overwrite>
+					<cfset isCmsPage = false>
+					<cffile action="READ" file="#qPage.FullFilePath#" variable="precode">
+					<cfif FindNoCase("CMS", precode) AND FindNoCase("nosearchy", precode)>
+						<cfset isCmsPage = true>
 					</cfif>
-				<cfelse>
-					<cfset deletePage(arguments.PageID)>
+					<!--- Overwrite CMS pages, otherwise delete --->
+					<cfif isCmsPage OR NOT variables.OnlyOverwriteCMS>
+						<cfif NOT FindNoCase("nowritey", precode)>
+							<cffile action="WRITE" file="#qPage.FullFilePath#" output="#output#">
+						</cfif>
+					<cfelse>
+						<cfset deletePage(arguments.PageID)>
+					</cfif>
 				</cfif>
+			<cfelse>
+				<cffile action="WRITE" file="#qPage.FullFilePath#" output="#output#">
 			</cfif>
-		<cfelse>
-			
-			<cfif NOT DirectoryExists(getDirectoryFromPath(qPage.FullFilePath))>
-				<cfdirectory directory="#getDirectoryFromPath(qPage.FullFilePath)#" action="create">
-			</cfif>
-			
-			<cffile action="WRITE" file="#qPage.FullFilePath#" output="#output#">
 		</cfif>
 	</cfif>
 	
@@ -621,17 +651,21 @@
 	<cfargument name="skeleton" type="string" required="yes" hint="The HTML skeleton to feed the contents of the page into. The name of any field can be placed in brackets and will be replaced by the contents of that field for the given page. For example, to place the contents of the page, use [Contents] as place-holder.">
 	<cfargument name="overwrite" type="boolean" default="true" hint="Should an existing file be overwritten. If false, makeFiles() will not create a file if it already exists.">
 	
-	<cfset var qPages = getAllPages(arguments.skeleton)>
+	<cfset var qPages = 0>
 	
-	<cfloop query="qPages">
-		<cfset writeFile(PageID=PageID,skeleton=arguments.skeleton,overwrite=arguments.overwrite)>
-	</cfloop>
+	<cfif Variables.UseFiles>
+		<cfset qPages = getAllPages(arguments.skeleton)>
+		
+		<cfloop query="qPages">
+			<cfset writeFile(PageID=PageID,skeleton=arguments.skeleton,overwrite=arguments.overwrite)>
+		</cfloop>
+	</cfif>
 	
 </cffunction>
 
 <cffunction name="upgrade" access="public" returntype="any" output="false" hint="">
 	
-	<cfset upgradeParentSections()>
+	<!---<cfset upgradeParentSections()>--->
 	<cfset upgradeURLPaths()>
 	
 </cffunction>
@@ -654,9 +688,8 @@
 	
 	<cfset var qPages = 0>
 	
-	<cfif NOT Variables.Pages.hasPages(hasUrlPath=true)>
+	<cfif Variables.Pages.hasPages(hasUrlPath=false)>
 		<cfset qPages = Variables.Pages.getPages(UrlPath="",fieldlist="PageID,SectionID,FileName")>
-		
 		<cfoutput query="qPages">
 			<cfset Variables.Pages.saveRecord(
 				PageID=PageID,
@@ -818,7 +851,7 @@ http://enabofaisal.wordpress.com/2011/07/28/cf-function-to-clean-ms-word-html-me
 		<field name="SectionTitle" Label="Section Title" type="text" Length="60" required="true" />
 		<field name="Description" Label="Description" type="text" Length="240" />
 		<field name="Keywords" Label="Keywords" type="text" Length="240" />
-		<field name="SectionDir" Label="Section Dir" type="text" Length="240" />
+		<field name="SectionDir" Label="Section Dir" type="text" Length="240" help="The directoy for this section. Leave blank to have the directory name determined from the title." />
 		<field name="SectionLink" Label="Section Link" type="text" Length="240" />
 		<field name="MainPageURL" Label="Main Page" type="text" Length="240" />
 		<field name="MapSectionID" Label="Map Section" type="integer" />

@@ -92,6 +92,33 @@
 	</cfif></cfloop>
 	ORDER BY	Title
 	</cfquery>
+	
+	<cfif StructCount(Arguments)>
+		<cfquery name="qPages" dbtype="query">
+		SELECT		*
+		FROM		qPages
+		WHERE		1 = 1
+		<cfif StructKeyExists(Arguments,"LinkURL") AND isSimpleValue(Arguments.LinkURL) AND Len(Arguments.LinkURL)>
+			AND		LinkURL = <cfqueryparam value="#Arguments.LinkURL#" cfsqltype="CF_SQL_VARCHAR">
+		</cfif>
+		<cfif StructKeyExists(Arguments,"PageURL") AND isSimpleValue(Arguments.PageURL) AND Len(Arguments.PageURL)>
+			AND		LinkURL = <cfqueryparam value="#Arguments.PageURL#" cfsqltype="CF_SQL_VARCHAR">
+		</cfif>
+		<cfif StructKeyExists(Arguments,"PageFile") AND isSimpleValue(Arguments.PageFile) AND Len(Arguments.PageFile)>
+			AND		LinkURL LIKE <cfqueryparam value="%/#ListLast(Arguments.PageFile,'/')#" cfsqltype="CF_SQL_VARCHAR">
+		</cfif>
+		<cfif StructKeyExists(Arguments,"LinkLike") AND isSimpleValue(Arguments.LinkLike) AND Len(Arguments.LinkLike)>
+			AND		LinkURL LIKE <cfqueryparam value="%#Arguments.LinkLike#%" cfsqltype="CF_SQL_VARCHAR">
+		</cfif>
+		<cfif StructKeyExists(Arguments,"SectionID") AND isSimpleValue(Arguments.SectionID) AND Val(Arguments.SectionID)>
+			AND		SectionID = <cfqueryparam value="#Arguments.SectionID#" cfsqltype="CF_SQL_INTEGER">
+		</cfif>
+		<cfif StructKeyExists(Arguments,"Title") AND isSimpleValue(Arguments.Title) AND Len(Arguments.Title)>
+			AND		Title LIKE <cfqueryparam value="%#Arguments.Title#%" cfsqltype="CF_SQL_VARCHAR">
+		</cfif>
+		ORDER BY	Title
+		</cfquery>
+	</cfif>
 
 	<cfreturn qPages>
 </cffunction>
