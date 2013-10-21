@@ -6,7 +6,7 @@
 <cfoutput query="qPage">
 
 <cfif Len(ImageFileName)>
-	<div><img src="/f/page-images/#ImageFileName#" alt="" /></div>
+	<div><img src="#Application.FileMgr.getFileURL(ImageFileName,'page-images')#" alt="" /></div>
 </cfif>
 
 <h1>#Trim(XmlFormat(Title))#</h1>
