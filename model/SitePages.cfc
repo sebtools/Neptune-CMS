@@ -184,21 +184,20 @@
 <cffunction name="getSiteMap" access="public" returntype="any" output="false" hint="">
 
 	<cfset var qPages = getPages()>
-	<cfset var qSections = variables.CMS.getSections()>
+	<cfset var qSections = variables.CMS.getSections(fieldlist="SectionID,SectionTitle")>
 	<cfset var qSiteMap = 0>
-
+	
 	<cfquery name="qSiteMap" dbtype="query">
-	SELECT		qPages.SectionID,qPages.LinkURL,qPages.Title,
+	SELECT		CAST(qPages.SectionID AS BIGINT) AS SectionID,
+				qPages.LinkURL,
+				qPages.Title,
 				qSections.SectionTitle
 	FROM		qPages,	qSections
-	WHERE		qPages.SectionID = qSections.SectionID
+	WHERE		CAST(qPages.SectionID AS BIGINT) = CAST(qSections.SectionID AS BIGINT)
 	UNION		
-	SELECT		SectionID,qPages.LinkURL,qPages.Title,'' AS SectionTitle
+	SELECT		0 AS SectionID,qPages.LinkURL,qPages.Title,'' AS SectionTitle
 	FROM		qPages
-	WHERE		qPages.SectionID = 0
-	<!---SELECT		0 AS SectionID,qPages.LinkURL,qPages.Title,'' AS SectionTitle
-	FROM		qPages
-	WHERE		qPages.SectionID NOT IN (#ValueList(qSections.SectionID)#)--->
+	WHERE		CAST(qPages.SectionID AS BIGINT) = CAST(0 AS BIGINT)
 	</cfquery>
 
 	<cfreturn qSiteMap>
