@@ -130,12 +130,50 @@
 </cffunction>
 
 <cffunction name="getSiteLinks" access="public" returntype="query" output="no">
-	
+	<cfargument name="CurrentURL" type="string" required="false">
+
 	<cfset var qLinks = 0>
 	
 	<cf_DMQuery name="qLinks">
 	SELECT		cmsSections.SectionID,SectionTitle,SectionLink,
-				LinkID,Label,LinkURL
+				LinkID,Label,
+				<cfif StructKeyExists(Arguments,"CurrentURL") AND Len(Trim(Arguments.CurrentURL))>
+				CASE
+					WHEN
+							EXISTS (
+								SELECT	1
+								FROM	cmsLinks
+								WHERE	cmsLinks.SectionID = cmsSections.SectionID
+									AND	LinkURL = <cf_DMParam value="#Arguments.CurrentURL#" cfsqltype="CF_SQL_VARCHAR">
+							)
+						THEN
+							1
+					WHEN
+							<cf_DMParam value="#Arguments.CurrentURL#" cfsqltype="CF_SQL_VARCHAR"> LIKE (<cfoutput>#Variables.DataMgr.concatSQL("SectionLink","'%'")#</cfoutput>)
+						AND	NOT EXISTS (
+								SELECT	1
+								FROM	cmsLinks
+								WHERE	LinkURL = <cf_DMParam value="#Arguments.CurrentURL#" cfsqltype="CF_SQL_VARCHAR">
+							)
+						THEN
+							1
+					ELSE
+						0
+				END AS isCurrentSection,
+				CASE
+					WHEN
+						LinkURL = <cf_DMParam value="#Arguments.CurrentURL#" cfsqltype="CF_SQL_VARCHAR">
+						THEN 1
+					ELSE
+						0
+				END AS isCurrentLink,
+				</cfif>
+				CASE
+					WHEN LinkID IS NULL
+						THEN SectionLink
+					ELSE
+						LinkURL
+				END AS LinkURL
 	FROM		cmsSections
 	LEFT JOIN	cmsLinks
 		ON		cmsSections.SectionID = cmsLinks.SectionID
@@ -717,7 +755,7 @@ http://enabofaisal.wordpress.com/2011/07/28/cf-function-to-clean-ms-word-html-me
 	<cfset result = ReReplaceNoCase(result,"(<!--\[if).*?(<!\[endif\]-->)","","ALL")>
 	
 	<!--- remove most of the unwanted HTML attributes with their values --->
-	<cfset result = ReReplaceNoCase(result,'[ ]+(style|align|valign|dir|class|id|lang|width|height|nowrap)=".*?"',"","ALL")>
+	<!---<cfset result = ReReplaceNoCase(result,'[ ]+(style|align|valign|dir|class|id|lang|width|height|nowrap)=".*?"',"","ALL")>--->
 	
 	<cfset result = ReReplace(result,"Mso.*?[#chr(34)#]",'"',"ALL")>
 	<cfset result = Replace(result," class=''","","ALL")>
