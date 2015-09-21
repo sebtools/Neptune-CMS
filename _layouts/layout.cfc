@@ -13,6 +13,22 @@
 	<cfreturn result>
 </cffunction>
 
+<cffunction name="getSectionID" access="public" returntype="numeric" output="no">
+
+	<cfif NOT StructKeyExists(variables.me,"SectionID")>
+		<cfset variables.me.SectionID = 0>
+	</cfif>
+
+	<cfreturn Val(variables.me.SectionID)>
+</cffunction>
+
+<cffunction name="setSectionID" access="public" returntype="void" output="no">
+	<cfargument name="SectionID" type="numeric" required="yes">
+
+	<cfset variables.me.SectionID = Arguments.SectionID>
+
+</cffunction>
+
 <cffunction name="nav" access="public" returntype="void" output="yes">
 	<cfset var qSections = Variables.Factory.CMS.Sections.getSections(fieldlist="SectionTitle,SectionLink,")>
 	<div class="nav">
