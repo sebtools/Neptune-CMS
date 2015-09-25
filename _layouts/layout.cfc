@@ -13,6 +13,14 @@
 	<cfreturn result>
 </cffunction>
 
+<cffunction name="setScriptName" access="public" returntype="layout" output="no">
+	<cfargument name="ScriptName" type="string" required="yes">
+	
+	<cfset Variables.me.ScriptName = Arguments.ScriptName> 
+	
+	<cfreturn This>
+</cffunction>
+
 <cffunction name="getSectionID" access="public" returntype="numeric" output="no">
 
 	<cfif NOT StructKeyExists(variables.me,"SectionID")>
