@@ -475,6 +475,7 @@
 					</cfif>
 				</cfif>
 			<cfelse>
+				<cfset Variables.Manager.FileMgr.makedir(getDirectoryFromPath(qPage.FullFilePath))>
 				<cffile action="WRITE" file="#qPage.FullFilePath#" output="#output#">
 			</cfif>
 		</cfif>
